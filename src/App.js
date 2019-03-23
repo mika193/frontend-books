@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import cn from 'classnames';
 import { isLength, isISBN, isEmpty, isInt, isNumeric} from 'validator';
+import { transform } from 'lodash';
 import books from './data';
 import BooksList from './BooksList';
 import Book from './Book';
@@ -28,27 +29,33 @@ class App extends Component {
 
   onMainClick = (e) => {
     e.preventDefault();
-    this.setState({ view: 'list', activePage: { main: true, addPage: false }});
+    this.setState({
+      view: 'list',
+      invalidFields: new Set(),
+      activePage: { main: true, addPage: false }
+    });
   }
 
   onAddBookClick = (e) => {
     e.preventDefault();
-    const currentBook = {
-      title: '',
-      cover: '',
-      description: '',
-      author: '',
-      isbn: '',
-      edition: '',
-      rate: ''
-    };
-    this.setState({ view: 'addBook', form: currentBook, invalidFields: new Set(), activePage: { main: false, addPage: true }})
+    const { form } = this.state;
+    const currentBook = transform(form, (obj, value, key) => obj[key] = '', {});
+    this.setState({
+      view: 'addBook',
+      form: currentBook,
+      invalidFields: new Set(),
+      activePage: { main: false, addPage: true }
+    });
   }
 
   onBookClick = (currentISBN) => (e) => {
     e.preventDefault();
     const currentBook = this.state.books.find(({ isbn }) => isbn === currentISBN);
-    this.setState({ view: 'viewBook', form: currentBook, activePage: { main: false, addPage: false } });
+    this.setState({
+      view: 'viewBook',
+      form: currentBook,
+      activePage: { main: false, addPage: false }
+    });
   };
 
   onImageLoad = (reader) => () =>{
@@ -56,17 +63,17 @@ class App extends Component {
     this.setState({ form: { ...form, cover: reader.result } });
   }
 
-  checkValidity = {
-    title: (value) => isLength(value, {min:10, max: 100}),
-    description: (value) => isLength(value, {min:100, max: 1000}),
-    author: (value) => isLength(value, {min:10, max: 100}),
-    isbn: (value) => isISBN(value),
-    edition: (value) => isNumeric(value) && isLength(value, {min:2, max: 4}),
-    rate: (value) => isEmpty(value) || isInt(value, {min:0, max: 5})
-  }
-
   onInputChange = ({ target: { name, value, files } }) => {
     const { form, invalidFields } = this.state;
+    const  checkValidity = {
+      title: (value) => isLength(value, {min:10, max: 100}),
+      description: (value) => isLength(value, {min:100, max: 1000}),
+      author: (value) => isLength(value, {min:10, max: 100}),
+      isbn: (value) => isISBN(value),
+      edition: (value) => isNumeric(value) && isLength(value, {min:2, max: 4}),
+      rate: (value) => isEmpty(value) || isInt(value, {min:0, max: 5})
+    }
+
     if (files) {
       const reader = new FileReader();
       if (files[0].type.includes('image/')) {
@@ -75,9 +82,9 @@ class App extends Component {
       }
       return;
     }
-    const newInvalidFields = new Set(Array.from(invalidFields));
+    const newInvalidFields = new Set([...invalidFields]);
 
-    if (!this.checkValidity[name](value)) {
+    if (!checkValidity[name](value)) {
       newInvalidFields.add(name);
     } else {
       newInvalidFields.delete(name);
@@ -125,12 +132,34 @@ class App extends Component {
   }
 
   render() {
+    const generalParams = {
+      form: this.state.form,
+      status: this.state.view,
+      invalidFields: this.state.invalidFields,
+    }
+
+    const viewParams = {
+      onSubmit: this.onEditClick,
+    }
+
+    const editParams = {
+      onInputChange: this.onInputChange,
+      onSubmit: this.onSaveClick,
+      onImageDelete: this.onImageDelete,
+      invalidFields: this.state.invalidFields
+    }
+
+    const addParams = {
+      onInputChange: this.onInputChange,
+      onSubmit: this.onAddClick,
+    }
+
     const content = {
       list: <BooksList books={this.state.books} onBookClick={this.onBookClick}/>,
-      viewBook: <Book form={this.state.form} status={this.state.view} onSubmit={this.onEditClick} invalidFields={this.state.invalidFields}/>,
-      editBook: <Book form={this.state.form} status={this.state.view} onInputChange={this.onInputChange}onSubmit={this.onSaveClick} onImageDelete={this.onImageDelete} invalidFields={this.state.invalidFields}/>,
-      addBook: <Book form={this.state.form} status={this.state.view} onInputChange={this.onInputChange}onSubmit={this.onAddClick} invalidFields={this.state.invalidFields}/>,
-      bookAdded: <Book form={this.state.form} status={this.state.view} invalidFields={this.state.invalidFields}/>
+      viewBook: <Book params={{ ...generalParams, ...viewParams}}/>,
+      editBook: <Book params={{...generalParams, ...editParams}}/>,
+      addBook: <Book params={{...generalParams, ...addParams}} />,
+      bookAdded: <Book  params={generalParams}/>
     }
 
     const { activePage } = this.state;
@@ -138,14 +167,14 @@ class App extends Component {
     return (
       <div>
         <header>
-          <div className="container">
-            <nav className="navbar navbar-expand-lg navbar-light" style={{backgroundColor: '#e3f2fd'}}>
-              <ul className="navbar-nav">
+          <div className='container'>
+            <nav className='navbar navbar-expand-lg navbar-light' style={{backgroundColor: '#e3f2fd'}}>
+              <ul className='navbar-nav'>
                 <li className={cn({'nav-item': true, active: activePage.main })}>
-                  <a className="nav-link" href="#" onClick={this.onMainClick}>Главная</a>
+                  <a className='nav-link' href='#' onClick={this.onMainClick}>Главная</a>
                 </li>
                 <li className={cn({'nav-item': true, active: activePage.addPage })}>
-                  <a className="nav-link" href="#" onClick={this.onAddBookClick}>Добавить книгу</a>
+                  <a className='nav-link' href='#' onClick={this.onAddBookClick}>Добавить книгу</a>
                 </li>
               </ul>
             </nav>

@@ -1,4 +1,4 @@
-.Book-hidden {
+.Book-image-input {
   position: absolute;
   clip: rect(0 0 0 0);
   clip-path: inset(100%);
@@ -11,6 +11,13 @@
   border: 0;
 }
 
+.Book-image-input:disabled + label:hover,
+.Book-image-input:disabled + label:active {
+  background-color: transparent !important;
+  color: #28a745 !important;
+  cursor: auto;
+}
+
 .Book-textarea {
   height: 150px;
   resize: none;
@@ -18,6 +25,11 @@
 
 .Book-invalid {
   border-color: #dc3545;
+}
+
+.Book-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 .2rem rgba(255, 0, 47, 0.61);
 }
 
 .Book-input-groups {

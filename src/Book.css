@@ -19,3 +19,10 @@
 .Book-invalid {
   border-color: #dc3545;
 }
+
+.Book-input-groups {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
